@@ -12,7 +12,7 @@ Este é um jogo incremental (idle/clicker) onde os jogadores escolhem entre duas
 
 ### Backend (Spring Boot)
 - **Framework**: Spring Boot 3.2.0
-- **Banco de Dados**: H2 (em memória para desenvolvimento)
+- **Banco de Dados**: PostgreSQL 14+
 - **Autenticação**: JWT (JSON Web Tokens)
 - **API**: RESTful com Spring Security
 
@@ -75,29 +75,124 @@ node --version
 npm --version
 ```
 
-#### 4. Git (Opcional, mas recomendado)
+#### 4. PostgreSQL 14+
+**Opção 1: Instalador Oficial (Recomendado)**
+1. Baixe o [PostgreSQL para Windows](https://www.postgresql.org/download/windows/)
+2. Execute o instalador como administrador
+3. Durante a instalação:
+   - Senha do superusuário: `postgres` (anote esta senha)
+   - Porta: `5432` (padrão)
+   - Locale: `Portuguese, Brazil` ou `C`
+4. Após instalação, abra o pgAdmin ou SQL Shell
+5. Crie o banco de dados do projeto:
+```sql
+CREATE DATABASE werewolf_vampire_db;
+```
+
+**Opção 2: Chocolatey**
+```powershell
+choco install postgresql
+```
+
+**Opção 3: Docker (Para desenvolvedores experientes)**
+```cmd
+docker run --name postgres-werewolf -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:14
+docker exec -it postgres-werewolf psql -U postgres -c "CREATE DATABASE werewolf_vampire_db;"
+```
+
+#### 5. Git (Opcional, mas recomendado)
 1. Baixe o [Git for Windows](https://git-scm.com/download/win)
 2. Execute o instalador com configurações padrão
 
-### 🖥️ Executando o Projeto
+### ⚙️ Configuração do Banco de Dados
 
-#### Backend (Spring Boot)
+Antes de executar o projeto, certifique-se de que o PostgreSQL está rodando e configurado:
 
-**No Command Prompt:**
+#### Verificar se o PostgreSQL está rodando:
 ```cmd
-cd backend
-mvn spring-boot:run
+# Verificar se o serviço está ativo
+sc query postgresql-x64-14
+
+# Iniciar o serviço se necessário
+net start postgresql-x64-14
 ```
 
-**No PowerShell:**
+#### Configurar senha e banco (se necessário):
+1. Abra o **SQL Shell (psql)** ou **pgAdmin**
+2. Conecte com o usuário `postgres`
+3. Execute os comandos:
+```sql
+-- Criar banco se não existir
+CREATE DATABASE werewolf_vampire_db;
+
+-- Verificar se foi criado
+\l
+```
+
+#### Configurações personalizadas:
+
+**Para Desenvolvimento (application-dev.yml):**
+Edite o arquivo `backend/src/main/resources/application-dev.yml`:
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/SEU_BANCO
+    username: SEU_USUARIO
+    password: SUA_SENHA
+```
+
+**Para Produção (Variáveis de Ambiente):**
+Configure as seguintes variáveis de ambiente:
+```cmd
+# No Windows (Command Prompt)
+set DATABASE_URL=jdbc:postgresql://localhost:5432/werewolf_vampire_db
+set DATABASE_USERNAME=postgres
+set DATABASE_PASSWORD=sua_senha_segura
+
+# No PowerShell
+$env:DATABASE_URL="jdbc:postgresql://localhost:5432/werewolf_vampire_db"
+$env:DATABASE_USERNAME="postgres"
+$env:DATABASE_PASSWORD="sua_senha_segura"
+```
+
+### 🖥️ Executando o Projeto
+
+#### 🚀 Opção 1: Execução Automática (Recomendado)
+Execute o script que inicializa tudo automaticamente:
+```cmd
+start-project.bat
+```
+Este script irá:
+1. Verificar se o PostgreSQL está rodando
+2. Criar o banco de dados se não existir
+3. Iniciar o backend automaticamente
+4. Iniciar o frontend automaticamente
+
+#### 🔧 Opção 2: Execução Manual
+
+##### Backend (Spring Boot)
+
+**No Command Prompt (Desenvolvimento):**
+```cmd
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+**No PowerShell (Desenvolvimento):**
 ```powershell
 Set-Location backend
-mvn spring-boot:run
+mvn spring-boot:run -D"spring-boot.run.profiles=dev"
+```
+
+**Para Produção:**
+```cmd
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=prod
 ```
 
 O backend estará disponível em: `http://localhost:8080`
 
-#### Frontend (Angular)
+##### Frontend (Angular)
 
 **No Command Prompt:**
 ```cmd
@@ -200,7 +295,7 @@ O jogo possui um design dark/gótico com:
 - Spring Security
 - Spring Data JPA
 - JWT (JSON Web Tokens)
-- H2 Database (em memória)
+- PostgreSQL 14+
 - Maven 3.8+
 
 ### Frontend
@@ -265,6 +360,40 @@ O sistema utiliza JWT para autenticação:
 netstat -ano | findstr :8080
 # Matar processo (substitua <PID> pelo ID do processo)
 taskkill /PID <PID> /F
+```
+
+### Problemas com PostgreSQL:
+
+#### Erro: "Connection refused" ou "FATAL: password authentication failed"
+- Verifique se o PostgreSQL está rodando:
+```cmd
+sc query postgresql-x64-14
+```
+- Verifique as credenciais no `application.yml`
+- Reinicie o serviço PostgreSQL:
+```cmd
+net stop postgresql-x64-14
+net start postgresql-x64-14
+```
+
+#### Erro: "database does not exist"
+- Crie o banco manualmente:
+```sql
+psql -U postgres
+CREATE DATABASE werewolf_vampire_db;
+\q
+```
+
+#### Erro: "Port 5432 is already in use"
+- Verifique se há outra instância do PostgreSQL rodando
+- Ou altere a porta no `application.yml` e na configuração do PostgreSQL
+
+#### Problemas de conexão:
+1. Verifique o arquivo `pg_hba.conf` (geralmente em `C:\Program Files\PostgreSQL\14\data\`)
+2. Certifique-se de que a linha para localhost está configurada como `trust` ou `md5`:
+```
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+host    all             all             127.0.0.1/32            md5
 ```
 
 ## 🎯 Próximos Passos
